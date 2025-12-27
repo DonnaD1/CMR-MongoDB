@@ -3,6 +3,8 @@ from asammdf import MDF
 import pandas as pd
 import numpy as np
 
+#MDF to CSV 
+
 if len(sys.argv) < 2:
     print("Usage: python export_channels.py <mdf_file>")
     sys.exit(1)
@@ -48,3 +50,75 @@ output_file = "output_filtered_hybrid1.csv"
 df = pd.DataFrame(data)
 df.to_csv(output_file, index=False)
 print(f"[INFO] Export complete. Saved to '{output_file}'")
+
+import os 
+from pymongo import MongoClient 
+from datetime import datetime
+
+#Load to MongoDB + organize by year, month, and date 
+if len(df)!=len(ref_time):
+    sys.exit(1)
+
+if not np.allclose(df["Time"].values, ref_time):
+    sys.exit(1)
+
+mdf_name=os.path.basename(mdf_file)
+
+dt=None
+patterns=[
+    "%y-%m-%d_%H-%M-%S",
+    "%y_%m_%d_%H_%M_%S"
+]
+
+for fmt in patterns:
+    try:
+        dt=datetime.strptime(
+            mdf_name.replace("logfile_", "").replace(".mdf", ""),
+            fmt
+        )
+        break
+    except ValueError:
+        pass
+
+if dt is None:
+    sys.exit(1)
+
+year=dt.year
+month=dt.month
+day=dt.day
+
+#Need to add MongoDB server (is local use "mongodb://localhost:27017/")
+client=MongoClient()
+db=client["car_data"]
+collection=db["mdf_files"]
+
+records=df.to_dict(orient="records")
+
+existing=collection.find_one({
+    "file_name": mdf_name,
+    "year": year,
+    "month": month,
+    "day": day
+})
+
+if existing:
+    print("[INFO] This file already exists in MongoDB. Skipping load")
+    sys.exit(0)
+
+document={
+    "file_name": mdf_name,
+    "csv_name": output_file,
+    "uploaded_at": datetime.utcnow(),
+    "start_time": float(df["Time"].min()),
+    "end_time": float(df["Time"].max()),
+    "year": year,
+    "month": month,
+    "day": day,
+    "signals": records
+}
+
+collection.insert_one(document)
+print("File successfully loaded into MongoDB")
+
+collection.create_index([("year", 1), ("month", 1), ("day", 1)])
+collection.create_index("file_name")
