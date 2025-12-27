@@ -109,8 +109,6 @@ document={
     "file_name": mdf_name,
     "csv_name": output_file,
     "uploaded_at": datetime.utcnow(),
-    "start_time": float(df["Time"].min()),
-    "end_time": float(df["Time"].max()),
     "year": year,
     "month": month,
     "day": day,
