@@ -107,8 +107,6 @@ if existing:
 
 document={
     "file_name": mdf_name,
-    "csv_name": output_file,
-    "uploaded_at": datetime.utcnow(),
     "year": year,
     "month": month,
     "day": day,
