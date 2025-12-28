@@ -65,12 +65,11 @@ if not np.allclose(df["Time"].values, ref_time):
 mdf_name=os.path.basename(mdf_file)
 
 dt=None
-patterns=[
-    "%y-%m-%d_%H-%M-%S",
-    "%y_%m_%d_%H_%M_%S"
+pattern=[
+    "%y-%m-%d_%H-%M-%S"
 ]
 
-for fmt in patterns:
+for fmt in pattern:
     try:
         dt=datetime.strptime(
             mdf_name.replace("logfile_", "").replace(".mdf", ""),
